@@ -35,7 +35,7 @@ GEMINI_MODEL = "gemini-2.5-flash"
 
 HF_CHAT_MODEL = "microsoft/Phi-3-mini-4k-instruct"
 
-HF_IMAGE_MODEL = "stabilityai/stable-diffusion-xl-base-1.0"
+HF_IMAGE_MODEL = "black-forest-labs/FLUX.1-schnell"
 
 # --------------------------------------
 # App Configuration
