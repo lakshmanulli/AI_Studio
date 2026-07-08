@@ -1,41 +1,33 @@
-"""
-====================================================
-AI Studio Chatbot
-====================================================
 
-Supports:
-1. Google Gemini
-2. Hugging Face
+"""
+=========================================================
+AI Studio - Gemini Chatbot
+=========================================================
 
 Author : Lakshman
-====================================================
+
+Features
+--------
+✔ Google Gemini Chat
+✔ Chat History
+✔ Clear History
+✔ CLI Test
+=========================================================
 """
 
 from google import genai
-from huggingface_hub import InferenceClient
 
 from config import (
     GEMINI_API_KEY,
-    GEMINI_CHAT_MODEL,
-    HF_TOKEN,
-    HF_CHAT_MODEL
+    GEMINI_CHAT_MODEL
 )
 
 # =====================================================
 # Gemini Client
 # =====================================================
 
-gemini_client = genai.Client(
+client = genai.Client(
     api_key=GEMINI_API_KEY
-)
-
-# =====================================================
-# Hugging Face Client
-# =====================================================
-
-hf_client = InferenceClient(
-    provider="hf-inference",
-    api_key=HF_TOKEN
 )
 
 # =====================================================
@@ -44,76 +36,37 @@ hf_client = InferenceClient(
 
 chat_history = []
 
-
 # =====================================================
 # Gemini Chat
 # =====================================================
 
-def gemini_chat(prompt: str) -> str:
+def chat(prompt: str) -> str:
     """
-    Chat using Gemini
+    Send prompt to Gemini and return response.
     """
 
     try:
 
-        response = gemini_client.models.generate_content(
+        response = client.models.generate_content(
+
             model=GEMINI_CHAT_MODEL,
+
             contents=prompt
+
         )
 
         return response.text
 
     except Exception as e:
 
-        return f"Gemini Error : {e}"
+        return f"Error : {e}"
 
 
 # =====================================================
-# Hugging Face Chat
+# Ask AI
 # =====================================================
 
-def huggingface_chat(prompt: str) -> str:
-    """
-    Chat using Hugging Face
-    """
-
-    try:
-
-        response = hf_client.chat.completions.create(
-
-            model=HF_CHAT_MODEL,
-
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-
-            max_tokens=1024
-
-        )
-
-        return response.choices[0].message.content
-
-    except Exception as e:
-
-        return f"Hugging Face Error : {e}"
-
-
-# =====================================================
-# Main Chat Function
-# =====================================================
-
-def ask_ai(
-    prompt: str,
-    provider: str = "Gemini"
-) -> str:
-    """
-    Main chat function
-    """
-
-    provider = provider.lower()
+def ask_ai(prompt: str):
 
     chat_history.append(
         {
@@ -122,17 +75,7 @@ def ask_ai(
         }
     )
 
-    if provider == "gemini":
-
-        answer = gemini_chat(prompt)
-
-    elif provider in ["hugging face", "huggingface"]:
-
-        answer = huggingface_chat(prompt)
-
-    else:
-
-        answer = "Invalid AI Provider"
+    answer = chat(prompt)
 
     chat_history.append(
         {
@@ -145,14 +88,20 @@ def ask_ai(
 
 
 # =====================================================
-# Chat History
+# Get Chat History
 # =====================================================
 
-def get_chat_history():
+def get_history():
+
     return chat_history
 
 
-def clear_chat():
+# =====================================================
+# Clear History
+# =====================================================
+
+def clear_history():
+
     chat_history.clear()
 
 
@@ -166,10 +115,6 @@ if __name__ == "__main__":
     print("🤖 AI Studio Chatbot")
     print("=" * 60)
 
-    provider = input(
-        "\nChoose Provider (Gemini/Hugging Face): "
-    )
-
     while True:
 
         prompt = input("\nYou : ")
@@ -178,15 +123,12 @@ if __name__ == "__main__":
             "exit",
             "quit"
         ]:
-            print("Goodbye!")
+            print("\nGoodbye!")
             break
 
-        response = ask_ai(
-            prompt,
-            provider
-        )
+        response = ask_ai(prompt)
 
-        print("\nAI:\n")
+        print("\nGemini :\n")
 
         print(response)
 

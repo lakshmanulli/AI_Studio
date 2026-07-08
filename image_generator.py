@@ -1,54 +1,67 @@
+
 """
-=========================================
-AI Studio
-Image Generator using Hugging Face
-=========================================
+=========================================================
+AI Studio - AI Image Generator
+=========================================================
+
+Author : Lakshman
+
+Features
+--------
+✔ Free Image Generation
+✔ No API Key Required
+✔ Saves Images
+✔ Streamlit Ready
+✔ Error Handling
+=========================================================
 """
 
 import os
-from huggingface_hub import InferenceClient
+from io import BytesIO
+from datetime import datetime
 
-from config import (
-    HF_TOKEN,
-    HF_IMAGE_MODEL,
-    IMAGE_FOLDER
-)
+import requests
+from PIL import Image
 
-# --------------------------------------
-# Create output folder
-# --------------------------------------
+from config import IMAGE_FOLDER
+
+# ==========================================================
+# Create Image Folder
+# ==========================================================
 
 os.makedirs(
     IMAGE_FOLDER,
     exist_ok=True
 )
 
-# --------------------------------------
-# Hugging Face Client
-# --------------------------------------
+# ==========================================================
+# Generate Image
+# ==========================================================
 
-client = InferenceClient(
-    provider="hf-inference",
-    api_key=HF_TOKEN
-)
-
-# --------------------------------------
-# Image Generator
-# --------------------------------------
-
-def create_image(
-    prompt: str,
-    filename: str = "generated_image.png"
-):
+def generate_image(prompt: str):
 
     try:
 
-        image = client.text_to_image(
+        prompt = prompt.replace(" ", "%20")
 
-            prompt=prompt,
+        url = (
+            f"https://image.pollinations.ai/prompt/{prompt}"
+        )
 
-            model=HF_IMAGE_MODEL
+        response = requests.get(
+            url,
+            timeout=120
+        )
 
+        response.raise_for_status()
+
+        image = Image.open(
+            BytesIO(response.content)
+        )
+
+        filename = (
+            datetime.now().strftime("%Y%m%d_%H%M%S")
+            + ".png"
         )
 
         output_path = os.path.join(
@@ -62,31 +75,50 @@ def create_image(
 
     except Exception as e:
 
-        print(f"Image Generation Error : {e}")
-
-        return None
+        return f"Image Generation Error : {e}"
 
 
-# --------------------------------------
+# ==========================================================
+# Display Image
+# ==========================================================
+
+def show_image(image_path):
+
+    image = Image.open(image_path)
+
+    image.show()
+
+
+# ==========================================================
 # CLI Test
-# --------------------------------------
+# ==========================================================
 
 if __name__ == "__main__":
 
-    print("=" * 50)
-    print("AI Studio Image Generator")
-    print("=" * 50)
+    print("=" * 60)
+    print("🎨 AI Studio Image Generator")
+    print("=" * 60)
 
-    prompt = input("\nEnter Prompt : ")
+    while True:
 
-    image_path = create_image(prompt)
+        prompt = input(
+            "\nEnter Prompt (exit to quit): "
+        )
 
-    if image_path:
+        if prompt.lower() == "exit":
 
-        print("\nImage Saved Successfully")
+            break
 
-        print(image_path)
+        result = generate_image(prompt)
 
-    else:
+        if os.path.exists(result):
 
-        print("\nGeneration Failed")
+            print("\nImage Generated Successfully")
+
+            print(result)
+
+            show_image(result)
+
+        else:
+
+            print("\n" + result)

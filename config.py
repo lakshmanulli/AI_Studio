@@ -1,56 +1,67 @@
+
 """
-========================================================
-AI Studio Configuration
-========================================================
+==========================================================
+AI Studio - Configuration
+==========================================================
 Author : Lakshman
-Description :
-Central configuration for the AI Studio project.
-========================================================
+Description : Central configuration file
+==========================================================
 """
 
 import os
 from dotenv import load_dotenv
 
-# ========================================================
+# ==========================================================
 # Load Environment Variables
-# ========================================================
+# ==========================================================
 
 load_dotenv()
 
-# ========================================================
+# ==========================================================
+# Application Information
+# ==========================================================
+
+APP_NAME = "AI Studio"
+VERSION = "1.0.0"
+AUTHOR = "Lakshman"
+
+# ==========================================================
 # API Keys
-# ========================================================
+# ==========================================================
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
 HF_TOKEN = os.getenv("HF_TOKEN")
 
-# ========================================================
+# ==========================================================
 # Gemini Models
-# ========================================================
+# ==========================================================
 
 GEMINI_CHAT_MODEL = "gemini-2.5-flash"
+
 GEMINI_VISION_MODEL = "gemini-2.5-flash"
+
 GEMINI_EMBEDDING_MODEL = "models/embedding-001"
 
-# ========================================================
-# Hugging Face Models
-# ========================================================
+# ==========================================================
+# Hugging Face Model (Optional)
+# ==========================================================
 
 HF_CHAT_MODEL = "microsoft/Phi-3-mini-4k-instruct"
 
-# Change this if you want another supported image model
-HF_IMAGE_MODEL = "black-forest-labs/FLUX.1-schnell"
+# ==========================================================
+# RAG Settings
+# ==========================================================
 
-# ========================================================
-# Application Settings
-# ========================================================
+CHUNK_SIZE = 1000
 
-TEMPERATURE = 0.7
-MAX_OUTPUT_TOKENS = 1024
+CHUNK_OVERLAP = 200
 
-# ========================================================
+TOP_K = 4
+
+# ==========================================================
 # Folder Paths
-# ========================================================
+# ==========================================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -76,21 +87,11 @@ MODEL_FOLDER = os.path.join(
     "models"
 )
 
-# ========================================================
-# RAG Settings
-# ========================================================
-
-CHUNK_SIZE = 1000
-
-CHUNK_OVERLAP = 200
-
-TOP_K = 4
-
-# ========================================================
+# ==========================================================
 # Create Required Folders
-# ========================================================
+# ==========================================================
 
-folders = [
+FOLDERS = [
 
     UPLOAD_FOLDER,
 
@@ -104,44 +105,26 @@ folders = [
 
 ]
 
-for folder in folders:
+for folder in FOLDERS:
 
     os.makedirs(
         folder,
         exist_ok=True
     )
 
-# ========================================================
+# ==========================================================
 # Validation
-# ========================================================
+# ==========================================================
 
 if not GEMINI_API_KEY:
-    print(
-        "WARNING: GEMINI_API_KEY is missing in .env"
-    )
+    print("WARNING : GEMINI_API_KEY not found.")
 
 if not HF_TOKEN:
-    print(
-        "WARNING: HF_TOKEN is missing in .env"
-    )
+    print("WARNING : HF_TOKEN not found (optional).")
 
-# ========================================================
-# Application Information
-# ========================================================
-
-APP_NAME = "AI Studio"
-
-VERSION = "1.0.0"
-
-AUTHOR = "Lakshman"
-
-DESCRIPTION = (
-    "Gemini + Hugging Face AI Studio"
-)
-
-# ========================================================
+# ==========================================================
 # Test
-# ========================================================
+# ==========================================================
 
 if __name__ == "__main__":
 
@@ -149,17 +132,14 @@ if __name__ == "__main__":
     print(APP_NAME)
     print("=" * 60)
 
-    print("Gemini Chat Model :", GEMINI_CHAT_MODEL)
-    print("Gemini Vision Model :", GEMINI_VISION_MODEL)
-    print("HF Chat Model :", HF_CHAT_MODEL)
-    print("HF Image Model :", HF_IMAGE_MODEL)
+    print("Version :", VERSION)
 
     print("\nFolders\n")
 
     print("Uploads :", UPLOAD_FOLDER)
-    print("PDFs :", PDF_FOLDER)
+    print("PDF Folder :", PDF_FOLDER)
     print("Images :", IMAGE_FOLDER)
     print("Vector DB :", VECTOR_DB_FOLDER)
     print("Models :", MODEL_FOLDER)
 
-    print("\nConfiguration Loaded Successfully")
+    print("\nConfiguration Loaded Successfully.")

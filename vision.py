@@ -1,127 +1,178 @@
+
 """
-===========================================
-vision.py
-Gemini Vision using google-genai SDK
-===========================================
+=========================================================
+AI Studio - Gemini Vision
+=========================================================
+
+Author : Lakshman
+
+Features
+--------
+✔ Image Understanding
+✔ Image Captioning
+✔ OCR (Extract Text)
+✔ Custom Question Answering
+✔ Streamlit Ready
+=========================================================
 """
 
-from google import genai
+import os
 from PIL import Image
+from google import genai
 
 from config import (
     GEMINI_API_KEY,
-    GEMINI_MODEL
+    GEMINI_VISION_MODEL
 )
 
-# ------------------------------------
+# =====================================================
 # Gemini Client
-# ------------------------------------
+# =====================================================
 
 client = genai.Client(
     api_key=GEMINI_API_KEY
 )
 
+# =====================================================
+# Analyze Image
+# =====================================================
 
-# ------------------------------------
-# Image Analyzer
-# ------------------------------------
-
-def analyze_image(image_path, prompt):
+def analyze_image(image_path: str, prompt: str):
 
     try:
+
+        if not os.path.exists(image_path):
+            return "Error: Image file not found."
 
         image = Image.open(image_path)
 
         response = client.models.generate_content(
-
-            model=GEMINI_MODEL,
-
+            model=GEMINI_VISION_MODEL,
             contents=[
                 prompt,
                 image
             ]
-
         )
 
         return response.text
 
     except Exception as e:
 
-        return f"Error : {e}"
+        return f"Vision Error: {e}"
 
 
-# ------------------------------------
+# =====================================================
+# Describe Image
+# =====================================================
+
+def describe_image(image_path: str):
+
+    prompt = """
+    Describe this image in detail.
+
+    Include:
+    - Objects
+    - People
+    - Background
+    - Colors
+    - Activities
+    - Overall scene
+    """
+
+    return analyze_image(image_path, prompt)
+
+
+# =====================================================
 # Image Caption
-# ------------------------------------
+# =====================================================
 
-def image_caption(image_path):
+def image_caption(image_path: str):
 
-    prompt = "Describe this image in detail."
+    prompt = """
+    Generate a detailed caption for this image.
+    """
 
     return analyze_image(image_path, prompt)
 
 
-# ------------------------------------
+# =====================================================
 # OCR
-# ------------------------------------
+# =====================================================
 
-def extract_text(image_path):
+def extract_text(image_path: str):
 
     prompt = """
-Extract all visible text from the image.
-Keep formatting whenever possible.
-"""
+    Extract all visible text from this image.
+    Preserve formatting whenever possible.
+    """
 
     return analyze_image(image_path, prompt)
 
 
-# ------------------------------------
-# Object Detection
-# ------------------------------------
+# =====================================================
+# Ask Question
+# =====================================================
 
-def detect_objects(image_path):
-
-    prompt = """
-Identify every object visible in this image.
-"""
-
-    return analyze_image(image_path, prompt)
-
-
-# ------------------------------------
-# Scene Description
-# ------------------------------------
-
-def scene_description(image_path):
-
-    prompt = """
-Explain the complete scene in detail.
-"""
-
-    return analyze_image(image_path, prompt)
-
-
-# ------------------------------------
-# Custom Question
-# ------------------------------------
-
-def ask_image(image_path, question):
+def ask_image(image_path: str, question: str):
 
     return analyze_image(image_path, question)
 
 
-# ------------------------------------
-# Testing
-# ------------------------------------
+# =====================================================
+# CLI Test
+# =====================================================
 
 if __name__ == "__main__":
 
-    path = input("Image Path : ")
+    print("=" * 60)
+    print("🖼 AI Studio - Gemini Vision")
+    print("=" * 60)
 
-    question = input("Ask : ")
+    image_path = input("Enter Image Path : ")
 
-    answer = ask_image(path, question)
+    if not os.path.exists(image_path):
 
-    print("\n")
+        print("Image not found.")
+        exit()
 
-    print(answer)
+    while True:
+
+        print("\nChoose Option")
+        print("1. Describe Image")
+        print("2. Caption Image")
+        print("3. Extract Text (OCR)")
+        print("4. Ask Question")
+        print("5. Exit")
+
+        choice = input("\nEnter Choice : ")
+
+        if choice == "1":
+
+            print("\n")
+            print(describe_image(image_path))
+
+        elif choice == "2":
+
+            print("\n")
+            print(image_caption(image_path))
+
+        elif choice == "3":
+
+            print("\n")
+            print(extract_text(image_path))
+
+        elif choice == "4":
+
+            question = input("\nQuestion : ")
+
+            print("\n")
+            print(ask_image(image_path, question))
+
+        elif choice == "5":
+
+            print("\nGoodbye!")
+            break
+
+        else:
+
+            print("\nInvalid Choice")

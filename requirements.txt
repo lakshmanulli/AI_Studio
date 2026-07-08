@@ -1,16 +1,45 @@
+
+# Streamlit
+streamlit
+
+# Environment Variables
+python-dotenv
+
+# Google Gemini SDK
+google-genai
+
+# Pillow (Image Processing)
+Pillow
+
+# HTTP Requests
+requests
+
+# Hugging Face (Optional - Chat Models)
+huggingface_hub
+
+# LangChain
+langchain
+langchain-community
+langchain-google-genai
+langchain-text-splitters
+
+# Vector Database
+faiss-cpu
+
+# PDF Reader
+pypdf
+
+# Numerical Computing
+numpy
+
+# Progress Bar
+tqdm
+
+# Optional (Future Local Image/Video Models)
 torch
 torchvision
 torchaudio
-diffusers
 transformers
 accelerate
+diffusers
 safetensors
-sentencepiece
-huggingface_hub
-opencv-python
-imageio
-imageio-ffmpeg
-numpy
-pillow
-streamlit
-python-dotenv
