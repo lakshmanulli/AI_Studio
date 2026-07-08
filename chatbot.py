@@ -1,12 +1,14 @@
 """
-=========================================
-chatbot.py
-AI Studio Chat Module
+====================================================
+AI Studio Chatbot
+====================================================
 
 Supports:
 1. Google Gemini
 2. Hugging Face
-=========================================
+
+Author : Lakshman
+====================================================
 """
 
 from google import genai
@@ -14,41 +16,48 @@ from huggingface_hub import InferenceClient
 
 from config import (
     GEMINI_API_KEY,
-    GEMINI_MODEL,
+    GEMINI_CHAT_MODEL,
     HF_TOKEN,
-    HF_CHAT_MODEL,
+    HF_CHAT_MODEL
 )
 
-# =========================================
+# =====================================================
 # Gemini Client
-# =========================================
+# =====================================================
 
 gemini_client = genai.Client(
     api_key=GEMINI_API_KEY
 )
 
-# =========================================
+# =====================================================
 # Hugging Face Client
-# =========================================
+# =====================================================
 
 hf_client = InferenceClient(
     provider="hf-inference",
     api_key=HF_TOKEN
 )
 
-# =========================================
+# =====================================================
+# Chat History
+# =====================================================
+
+chat_history = []
+
+
+# =====================================================
 # Gemini Chat
-# =========================================
+# =====================================================
 
 def gemini_chat(prompt: str) -> str:
     """
-    Generate a response using Gemini.
+    Chat using Gemini
     """
 
     try:
 
         response = gemini_client.models.generate_content(
-            model=GEMINI_MODEL,
+            model=GEMINI_CHAT_MODEL,
             contents=prompt
         )
 
@@ -56,16 +65,16 @@ def gemini_chat(prompt: str) -> str:
 
     except Exception as e:
 
-        return f"Gemini Error: {e}"
+        return f"Gemini Error : {e}"
 
 
-# =========================================
+# =====================================================
 # Hugging Face Chat
-# =========================================
+# =====================================================
 
 def huggingface_chat(prompt: str) -> str:
     """
-    Generate a response using Hugging Face.
+    Chat using Hugging Face
     """
 
     try:
@@ -89,64 +98,96 @@ def huggingface_chat(prompt: str) -> str:
 
     except Exception as e:
 
-        return f"Hugging Face Error: {e}"
+        return f"Hugging Face Error : {e}"
 
 
-# =========================================
+# =====================================================
 # Main Chat Function
-# =========================================
+# =====================================================
 
-def ask_ai(prompt: str, provider="Gemini") -> str:
+def ask_ai(
+    prompt: str,
+    provider: str = "Gemini"
+) -> str:
     """
-    Select AI provider.
-
-    provider:
-        Gemini
-        Hugging Face
+    Main chat function
     """
 
     provider = provider.lower()
 
+    chat_history.append(
+        {
+            "role": "user",
+            "content": prompt
+        }
+    )
+
     if provider == "gemini":
 
-        return gemini_chat(prompt)
+        answer = gemini_chat(prompt)
 
-    elif provider == "hugging face":
+    elif provider in ["hugging face", "huggingface"]:
 
-        return huggingface_chat(prompt)
+        answer = huggingface_chat(prompt)
 
     else:
 
-        return "Invalid AI Provider."
+        answer = "Invalid AI Provider"
+
+    chat_history.append(
+        {
+            "role": "assistant",
+            "content": answer
+        }
+    )
+
+    return answer
 
 
-# =========================================
-# Command Line Test
-# =========================================
+# =====================================================
+# Chat History
+# =====================================================
+
+def get_chat_history():
+    return chat_history
+
+
+def clear_chat():
+    chat_history.clear()
+
+
+# =====================================================
+# CLI Test
+# =====================================================
 
 if __name__ == "__main__":
 
-    print("=" * 50)
-    print("🤖 AI Studio Chat")
-    print("=" * 50)
+    print("=" * 60)
+    print("🤖 AI Studio Chatbot")
+    print("=" * 60)
 
     provider = input(
-        "Choose Provider (Gemini / Hugging Face): "
+        "\nChoose Provider (Gemini/Hugging Face): "
     )
 
     while True:
 
-        prompt = input("\nYou: ")
+        prompt = input("\nYou : ")
 
-        if prompt.lower() in ["exit", "quit"]:
-
+        if prompt.lower() in [
+            "exit",
+            "quit"
+        ]:
+            print("Goodbye!")
             break
 
-        answer = ask_ai(
+        response = ask_ai(
             prompt,
             provider
         )
 
         print("\nAI:\n")
 
-        print(answer)
+        print(response)
+
+        print("-" * 60)

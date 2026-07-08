@@ -1,72 +1,92 @@
 """
 =========================================
-image_generator.py
-Generate Images using Hugging Face
+AI Studio
+Image Generator using Hugging Face
 =========================================
 """
 
 import os
 from huggingface_hub import InferenceClient
-from config import HF_TOKEN, HF_IMAGE_MODEL
 
+from config import (
+    HF_TOKEN,
+    HF_IMAGE_MODEL,
+    IMAGE_FOLDER
+)
 
-class ImageGenerator:
+# --------------------------------------
+# Create output folder
+# --------------------------------------
 
-    def __init__(self):
+os.makedirs(
+    IMAGE_FOLDER,
+    exist_ok=True
+)
 
-        self.client = InferenceClient(
-            provider="hf-inference",
-            api_key=HF_TOKEN
+# --------------------------------------
+# Hugging Face Client
+# --------------------------------------
+
+client = InferenceClient(
+    provider="hf-inference",
+    api_key=HF_TOKEN
+)
+
+# --------------------------------------
+# Image Generator
+# --------------------------------------
+
+def create_image(
+    prompt: str,
+    filename: str = "generated_image.png"
+):
+
+    try:
+
+        image = client.text_to_image(
+
+            prompt=prompt,
+
+            model=HF_IMAGE_MODEL
+
         )
 
-        os.makedirs("generated_images", exist_ok=True)
+        output_path = os.path.join(
+            IMAGE_FOLDER,
+            filename
+        )
 
-    def generate_image(self, prompt):
+        image.save(output_path)
 
-        try:
+        return output_path
 
-            image = self.client.text_to_image(
-                prompt=prompt,
-                model=HF_IMAGE_MODEL
-            )
+    except Exception as e:
 
-            filename = (
-                prompt[:20]
-                .replace(" ", "_")
-                .replace("/", "_")
-            )
+        print(f"Image Generation Error : {e}")
 
-            filepath = f"generated_images/{filename}.png"
-
-            image.save(filepath)
-
-            return filepath
-
-        except Exception as e:
-
-            print(e)
-
-            return None
+        return None
 
 
-generator = ImageGenerator()
-
-
-def create_image(prompt):
-
-    return generator.generate_image(prompt)
-
+# --------------------------------------
+# CLI Test
+# --------------------------------------
 
 if __name__ == "__main__":
 
-    prompt = input("Enter Prompt : ")
+    print("=" * 50)
+    print("AI Studio Image Generator")
+    print("=" * 50)
 
-    path = create_image(prompt)
+    prompt = input("\nEnter Prompt : ")
 
-    if path:
+    image_path = create_image(prompt)
 
-        print("Image Saved :", path)
+    if image_path:
+
+        print("\nImage Saved Successfully")
+
+        print(image_path)
 
     else:
 
-        print("Generation Failed")
+        print("\nGeneration Failed")

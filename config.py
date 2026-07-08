@@ -1,109 +1,165 @@
 """
-==========================================
+========================================================
 AI Studio Configuration
-==========================================
+========================================================
+Author : Lakshman
+Description :
+Central configuration for the AI Studio project.
+========================================================
 """
 
 import os
 from dotenv import load_dotenv
 
-# ----------------------------------------
+# ========================================================
 # Load Environment Variables
-# ----------------------------------------
+# ========================================================
 
 load_dotenv()
 
-# ----------------------------------------
+# ========================================================
 # API Keys
-# ----------------------------------------
+# ========================================================
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 HF_TOKEN = os.getenv("HF_TOKEN")
 
-# ----------------------------------------
-# Gemini Configuration
-# ----------------------------------------
+# ========================================================
+# Gemini Models
+# ========================================================
 
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_CHAT_MODEL = "gemini-2.5-flash"
+GEMINI_VISION_MODEL = "gemini-2.5-flash"
+GEMINI_EMBEDDING_MODEL = "models/embedding-001"
 
-# ----------------------------------------
-# Hugging Face Chat Model
-# ----------------------------------------
+# ========================================================
+# Hugging Face Models
+# ========================================================
 
 HF_CHAT_MODEL = "microsoft/Phi-3-mini-4k-instruct"
 
-# ----------------------------------------
-# Hugging Face Image Model
-# ----------------------------------------
-
+# Change this if you want another supported image model
 HF_IMAGE_MODEL = "black-forest-labs/FLUX.1-schnell"
 
-# ----------------------------------------
-# Video Configuration
-# ----------------------------------------
+# ========================================================
+# Application Settings
+# ========================================================
 
-VIDEO_PROVIDER = "LTX"
+TEMPERATURE = 0.7
+MAX_OUTPUT_TOKENS = 1024
 
-VIDEO_MODEL = "LTX-Video"
+# ========================================================
+# Folder Paths
+# ========================================================
 
-VIDEO_WIDTH = 768
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-VIDEO_HEIGHT = 512
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 
-VIDEO_FPS = 16
+PDF_FOLDER = os.path.join(
+    UPLOAD_FOLDER,
+    "pdfs"
+)
 
-VIDEO_DURATION = 5
+IMAGE_FOLDER = os.path.join(
+    BASE_DIR,
+    "generated_images"
+)
 
-VIDEO_NUM_FRAMES = VIDEO_FPS * VIDEO_DURATION
+VECTOR_DB_FOLDER = os.path.join(
+    BASE_DIR,
+    "vector_db"
+)
 
-VIDEO_GUIDANCE_SCALE = 7.5
+MODEL_FOLDER = os.path.join(
+    BASE_DIR,
+    "models"
+)
 
-VIDEO_INFERENCE_STEPS = 30
+# ========================================================
+# RAG Settings
+# ========================================================
 
-VIDEO_SEED = 42
+CHUNK_SIZE = 1000
 
-# ----------------------------------------
-# Folder Configuration
-# ----------------------------------------
+CHUNK_OVERLAP = 200
 
-UPLOAD_FOLDER = "uploads"
+TOP_K = 4
 
-GENERATED_IMAGES = "generated_images"
-
-GENERATED_VIDEOS = "generated_videos"
-
-MODEL_FOLDER = "models"
-
-# ----------------------------------------
+# ========================================================
 # Create Required Folders
-# ----------------------------------------
+# ========================================================
 
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+folders = [
 
-os.makedirs(GENERATED_IMAGES, exist_ok=True)
+    UPLOAD_FOLDER,
 
-os.makedirs(GENERATED_VIDEOS, exist_ok=True)
+    PDF_FOLDER,
 
-os.makedirs(MODEL_FOLDER, exist_ok=True)
+    IMAGE_FOLDER,
 
-# ----------------------------------------
-# Application Configuration
-# ----------------------------------------
+    VECTOR_DB_FOLDER,
+
+    MODEL_FOLDER
+
+]
+
+for folder in folders:
+
+    os.makedirs(
+        folder,
+        exist_ok=True
+    )
+
+# ========================================================
+# Validation
+# ========================================================
+
+if not GEMINI_API_KEY:
+    print(
+        "WARNING: GEMINI_API_KEY is missing in .env"
+    )
+
+if not HF_TOKEN:
+    print(
+        "WARNING: HF_TOKEN is missing in .env"
+    )
+
+# ========================================================
+# Application Information
+# ========================================================
 
 APP_NAME = "AI Studio"
 
-APP_VERSION = "1.0"
+VERSION = "1.0.0"
 
-MAX_TOKENS = 1024
+AUTHOR = "Lakshman"
 
-TEMPERATURE = 0.7
+DESCRIPTION = (
+    "Gemini + Hugging Face AI Studio"
+)
 
-# ----------------------------------------
-# Validate API Keys
-# ----------------------------------------
+# ========================================================
+# Test
+# ========================================================
 
-if not GEMINI_API_KEY:
-    print("⚠ GEMINI_API_KEY not found. Gemini features will not work.")
+if __name__ == "__main__":
 
-if not HF_TOKEN:
-    print("⚠ HF_TOKEN not found. Hugging Face features will not work.")
+    print("=" * 60)
+    print(APP_NAME)
+    print("=" * 60)
+
+    print("Gemini Chat Model :", GEMINI_CHAT_MODEL)
+    print("Gemini Vision Model :", GEMINI_VISION_MODEL)
+    print("HF Chat Model :", HF_CHAT_MODEL)
+    print("HF Image Model :", HF_IMAGE_MODEL)
+
+    print("\nFolders\n")
+
+    print("Uploads :", UPLOAD_FOLDER)
+    print("PDFs :", PDF_FOLDER)
+    print("Images :", IMAGE_FOLDER)
+    print("Vector DB :", VECTOR_DB_FOLDER)
+    print("Models :", MODEL_FOLDER)
+
+    print("\nConfiguration Loaded Successfully")

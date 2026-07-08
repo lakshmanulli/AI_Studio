@@ -1,17 +1,3 @@
-"""
-===========================================
-AI STUDIO
-Main Streamlit Application
-
-Modules
---------
-1. Chat
-2. Vision
-3. Image Generator
-4. Video Generator
-===========================================
-"""
-
 import os
 import streamlit as st
 from PIL import Image
@@ -20,15 +6,9 @@ from chatbot import ask_ai
 from vision import ask_image
 from image_generator import create_image
 
-# Your video_generator.py should expose a generator object
-# with a generate_video(prompt, filename) method.
-from video_generator import VideoGenerator
-from video_models.ltx_video import LTXVideo
-
-
-# ---------------------------------------
+# -------------------------------
 # Page Configuration
-# ---------------------------------------
+# -------------------------------
 
 st.set_page_config(
     page_title="AI Studio",
@@ -36,42 +16,32 @@ st.set_page_config(
     layout="wide"
 )
 
-# ---------------------------------------
-# Create Required Folders
-# ---------------------------------------
+# -------------------------------
+# Create folders
+# -------------------------------
 
 os.makedirs("uploads", exist_ok=True)
 os.makedirs("generated_images", exist_ok=True)
-os.makedirs("generated_videos", exist_ok=True)
 
-# ---------------------------------------
+# -------------------------------
 # Session State
-# ---------------------------------------
+# -------------------------------
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
-# ---------------------------------------
-# Video Generator
-# ---------------------------------------
-
-video_generator = VideoGenerator(
-    LTXVideo()
-)
-
-# ---------------------------------------
+# -------------------------------
 # Sidebar
-# ---------------------------------------
+# -------------------------------
 
 st.sidebar.title("🤖 AI Studio")
 
-page = st.sidebar.radio(
-    "Choose Module",
+module = st.sidebar.selectbox(
+    "Select Module",
     [
-        "💬 Chat",
-        "🖼 Vision",
-        "🎨 Image Generator",
-        "🎬 Video Generator"
+        "Chatbot",
+        "Vision",
+        "Image Generator"
     ]
 )
 
@@ -83,60 +53,55 @@ provider = st.sidebar.selectbox(
     ]
 )
 
-# ---------------------------------------
-# CHAT
-# ---------------------------------------
+# =====================================================
+# CHATBOT
+# =====================================================
 
-if page == "💬 Chat":
+if module == "Chatbot":
 
     st.title("💬 AI Chatbot")
 
-    for message in st.session_state.messages:
+    for msg in st.session_state.chat_history:
 
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
 
     prompt = st.chat_input("Ask anything...")
 
     if prompt:
 
-        st.session_state.messages.append(
+        st.session_state.chat_history.append(
             {
                 "role": "user",
                 "content": prompt
             }
         )
 
-        with st.chat_message("user"):
-            st.markdown(prompt)
+        with st.spinner("Thinking..."):
 
-        with st.chat_message("assistant"):
+            response = ask_ai(
+                prompt,
+                provider
+            )
 
-            with st.spinner("Thinking..."):
-
-                answer = ask_ai(
-                    prompt,
-                    provider
-                )
-
-                st.markdown(answer)
-
-        st.session_state.messages.append(
+        st.session_state.chat_history.append(
             {
                 "role": "assistant",
-                "content": answer
+                "content": response
             }
         )
 
-# ---------------------------------------
-# GEMINI VISION
-# ---------------------------------------
+        st.rerun()
 
-elif page == "🖼 Vision":
+# =====================================================
+# VISION
+# =====================================================
+
+elif module == "Vision":
 
     st.title("🖼 Gemini Vision")
 
-    uploaded = st.file_uploader(
+    uploaded_file = st.file_uploader(
         "Upload Image",
         type=["png", "jpg", "jpeg"]
     )
@@ -146,9 +111,9 @@ elif page == "🖼 Vision":
         "Describe this image."
     )
 
-    if uploaded:
+    if uploaded_file is not None:
 
-        image = Image.open(uploaded)
+        image = Image.open(uploaded_file)
 
         st.image(
             image,
@@ -157,45 +122,45 @@ elif page == "🖼 Vision":
 
         image_path = os.path.join(
             "uploads",
-            uploaded.name
+            uploaded_file.name
         )
 
         image.save(image_path)
 
-        if st.button("Analyze"):
+        if st.button("Analyze Image"):
 
             with st.spinner("Analyzing..."):
 
-                result = ask_image(
+                answer = ask_image(
                     image_path,
                     question
                 )
 
             st.success("Completed")
 
-            st.write(result)
+            st.write(answer)
 
-# ---------------------------------------
+# =====================================================
 # IMAGE GENERATOR
-# ---------------------------------------
+# =====================================================
 
-elif page == "🎨 Image Generator":
+elif module == "Image Generator":
 
     st.title("🎨 AI Image Generator")
 
     prompt = st.text_area(
-        "Image Prompt"
+        "Enter Image Prompt"
     )
 
     if st.button("Generate Image"):
 
-        with st.spinner("Generating..."):
+        with st.spinner("Generating Image..."):
 
             image_path = create_image(prompt)
 
-        if image_path:
+        if image_path and os.path.exists(image_path):
 
-            st.success("Image Generated")
+            st.success("Image Generated Successfully")
 
             st.image(
                 image_path,
@@ -206,62 +171,18 @@ elif page == "🎨 Image Generator":
 
                 st.download_button(
                     "Download Image",
-                    file,
+                    data=file,
                     file_name="generated_image.png",
                     mime="image/png"
                 )
 
         else:
 
-            st.error("Generation Failed")
+            st.error("Image Generation Failed")
 
-# ---------------------------------------
-# VIDEO GENERATOR
-# ---------------------------------------
+# -------------------------------
+# Footer
+# -------------------------------
 
-elif page == "🎬 Video Generator":
-
-    st.title("🎬 AI Video Generator")
-
-    prompt = st.text_area(
-        "Video Prompt"
-    )
-
-    filename = st.text_input(
-        "Output Filename",
-        "video.mp4"
-    )
-
-    if st.button("Generate Video"):
-
-        with st.spinner(
-            "Generating video..."
-        ):
-
-            video_path = video_generator.generate_video(
-                prompt,
-                filename
-            )
-
-        if os.path.exists(video_path):
-
-            st.success(
-                "Video Generated"
-            )
-
-            st.video(video_path)
-
-            with open(video_path, "rb") as file:
-
-                st.download_button(
-                    "Download Video",
-                    file,
-                    file_name=filename,
-                    mime="video/mp4"
-                )
-
-        else:
-
-            st.error(
-                "Video Generation Failed"
-            )
+st.sidebar.markdown("---")
+st.sidebar.info("AI Studio using Gemini + Hugging Face")
