@@ -1,10 +1,12 @@
 """
+=========================================
 chatbot.py
+AI Studio Chat Module
 
-Supports
-
+Supports:
 1. Google Gemini
 2. Hugging Face
+=========================================
 """
 
 from google import genai
@@ -12,33 +14,36 @@ from huggingface_hub import InferenceClient
 
 from config import (
     GEMINI_API_KEY,
-    HF_TOKEN,
     GEMINI_MODEL,
-    HF_CHAT_MODEL
+    HF_TOKEN,
+    HF_CHAT_MODEL,
 )
 
-# ----------------------------------------
+# =========================================
 # Gemini Client
-# ----------------------------------------
+# =========================================
 
 gemini_client = genai.Client(
     api_key=GEMINI_API_KEY
 )
 
-# ----------------------------------------
+# =========================================
 # Hugging Face Client
-# ----------------------------------------
+# =========================================
 
 hf_client = InferenceClient(
     provider="hf-inference",
     api_key=HF_TOKEN
 )
 
-# ----------------------------------------
+# =========================================
 # Gemini Chat
-# ----------------------------------------
+# =========================================
 
-def gemini_chat(prompt):
+def gemini_chat(prompt: str) -> str:
+    """
+    Generate a response using Gemini.
+    """
 
     try:
 
@@ -54,58 +59,94 @@ def gemini_chat(prompt):
         return f"Gemini Error: {e}"
 
 
-# ----------------------------------------
+# =========================================
 # Hugging Face Chat
-# ----------------------------------------
+# =========================================
 
-def huggingface_chat(prompt):
+def huggingface_chat(prompt: str) -> str:
+    """
+    Generate a response using Hugging Face.
+    """
 
     try:
 
-        completion = hf_client.chat.completions.create(
+        response = hf_client.chat.completions.create(
+
             model=HF_CHAT_MODEL,
+
             messages=[
                 {
                     "role": "user",
                     "content": prompt
                 }
             ],
-            max_tokens=512,
+
+            max_tokens=1024
+
         )
 
-        return completion.choices[0].message.content
+        return response.choices[0].message.content
 
     except Exception as e:
 
         return f"Hugging Face Error: {e}"
 
 
-# ----------------------------------------
-# Main Function
-# ----------------------------------------
+# =========================================
+# Main Chat Function
+# =========================================
 
-def ask_ai(prompt, model_name="Gemini"):
+def ask_ai(prompt: str, provider="Gemini") -> str:
+    """
+    Select AI provider.
 
-    if model_name == "Gemini":
+    provider:
+        Gemini
+        Hugging Face
+    """
+
+    provider = provider.lower()
+
+    if provider == "gemini":
+
         return gemini_chat(prompt)
 
-    elif model_name == "Hugging Face":
+    elif provider == "hugging face":
+
         return huggingface_chat(prompt)
 
     else:
-        return "Invalid model selected."
+
+        return "Invalid AI Provider."
 
 
-# ----------------------------------------
-# Test
-# ----------------------------------------
+# =========================================
+# Command Line Test
+# =========================================
 
 if __name__ == "__main__":
 
-    question = input("Ask: ")
+    print("=" * 50)
+    print("🤖 AI Studio Chat")
+    print("=" * 50)
 
-    answer = ask_ai(question, "Gemini")
+    provider = input(
+        "Choose Provider (Gemini / Hugging Face): "
+    )
 
-    print("\nAI Response:\n")
+    while True:
 
-    print(answer)
+        prompt = input("\nYou: ")
+
+        if prompt.lower() in ["exit", "quit"]:
+
+            break
+
+        answer = ask_ai(
+            prompt,
+            provider
+        )
+
+        print("\nAI:\n")
+
+        print(answer)
