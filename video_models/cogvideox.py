@@ -1,4 +1,4 @@
-from .base import BaseVideoGenerator
+from base import BaseVideoGenerator
 
 
 class CogVideoX(BaseVideoGenerator):
