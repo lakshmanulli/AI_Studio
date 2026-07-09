@@ -1,219 +1,253 @@
+
 """
-=========================================
-RAG.py
-AI Studio - PDF Chat using Gemini + FAISS
-=========================================
+=========================================================
+AI Studio - RAG (PDF Question Answering)
+=========================================================
+
+Author : Lakshman
+
+Features
+--------
+✔ Upload PDF
+✔ Extract Text
+✔ Split into Chunks
+✔ Gemini Embeddings
+✔ FAISS Vector Database
+✔ Semantic Search
+✔ Gemini Answer Generation
+=========================================================
 """
 
 import os
+import pickle
+import faiss
+import numpy as np
 
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
-
-from langchain_google_genai import (
-    GoogleGenerativeAIEmbeddings,
-    ChatGoogleGenerativeAI,
-)
-
-from langchain_core.prompts import ChatPromptTemplate
-
-from langchain.chains import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
+from pypdf import PdfReader
+from google import genai
 
 from config import (
     GEMINI_API_KEY,
-    GEMINI_MODEL,
-    EMBEDDING_MODEL,
+    GEMINI_CHAT_MODEL,
+    GEMINI_EMBEDDING_MODEL,
     PDF_FOLDER,
-    VECTOR_DB_PATH,
+    VECTOR_DB_FOLDER,
     CHUNK_SIZE,
-    CHUNK_OVERLAP,
+    CHUNK_OVERLAP
 )
 
-# -----------------------------------------------------
-# Google API Key
-# -----------------------------------------------------
+# ==========================================================
+# Gemini Client
+# ==========================================================
 
-os.environ["GOOGLE_API_KEY"] = GEMINI_API_KEY
+client = genai.Client(api_key=GEMINI_API_KEY)
 
-# -----------------------------------------------------
-# Embeddings
-# -----------------------------------------------------
+# ==========================================================
+# Read PDF
+# ==========================================================
 
-embeddings = GoogleGenerativeAIEmbeddings(
-    model=EMBEDDING_MODEL
-)
+def read_pdf(pdf_path):
 
-# -----------------------------------------------------
-# Gemini Model
-# -----------------------------------------------------
+    reader = PdfReader(pdf_path)
 
-llm = ChatGoogleGenerativeAI(
-    model=GEMINI_MODEL,
-    temperature=0.3
-)
+    text = ""
 
-# -----------------------------------------------------
-# Prompt
-# -----------------------------------------------------
+    for page in reader.pages:
 
-prompt = ChatPromptTemplate.from_template(
-"""
-You are an AI Assistant.
+        page_text = page.extract_text()
 
-Answer ONLY from the provided context.
+        if page_text:
 
-If the answer is not present in the context,
-say:
+            text += page_text + "\n"
 
-"I don't know based on the uploaded document."
+    return text
 
-Context:
-{context}
+# ==========================================================
+# Split Text
+# ==========================================================
 
-Question:
-{input}
-"""
-)
+def split_text(text):
 
-# -----------------------------------------------------
+    chunks = []
+
+    start = 0
+
+    while start < len(text):
+
+        end = start + CHUNK_SIZE
+
+        chunks.append(text[start:end])
+
+        start += CHUNK_SIZE - CHUNK_OVERLAP
+
+    return chunks
+
+# ==========================================================
+# Create Embedding
+# ==========================================================
+
+def get_embedding(text):
+
+    response = client.models.embed_content(
+
+        model=GEMINI_EMBEDDING_MODEL,
+
+        contents=text
+
+    )
+
+    return np.array(
+        response.embeddings[0].values,
+        dtype=np.float32
+    )
+
+# ==========================================================
 # Build Vector Database
-# -----------------------------------------------------
+# ==========================================================
 
-def build_vector_store(pdf_path):
+def build_vector_database(pdf_path):
 
-    loader = PyPDFLoader(pdf_path)
+    text = read_pdf(pdf_path)
 
-    documents = loader.load()
+    chunks = split_text(text)
 
-    splitter = RecursiveCharacterTextSplitter(
+    embeddings = []
 
-        chunk_size=CHUNK_SIZE,
+    for chunk in chunks:
 
-        chunk_overlap=CHUNK_OVERLAP
+        embeddings.append(get_embedding(chunk))
 
-    )
+    vectors = np.vstack(embeddings)
 
-    chunks = splitter.split_documents(documents)
+    index = faiss.IndexFlatL2(vectors.shape[1])
 
-    vector_db = FAISS.from_documents(
+    index.add(vectors)
 
-        chunks,
+    faiss.write_index(
 
-        embeddings
+        index,
 
-    )
-
-    vector_db.save_local(VECTOR_DB_PATH)
-
-    return True
-
-# -----------------------------------------------------
-# Multiple PDFs
-# -----------------------------------------------------
-
-def build_all_pdfs():
-
-    documents = []
-
-    for file in os.listdir(PDF_FOLDER):
-
-        if file.endswith(".pdf"):
-
-            loader = PyPDFLoader(
-                os.path.join(PDF_FOLDER, file)
-            )
-
-            documents.extend(loader.load())
-
-    splitter = RecursiveCharacterTextSplitter(
-
-        chunk_size=CHUNK_SIZE,
-
-        chunk_overlap=CHUNK_OVERLAP
+        os.path.join(
+            VECTOR_DB_FOLDER,
+            "faiss.index"
+        )
 
     )
 
-    chunks = splitter.split_documents(documents)
+    with open(
 
-    vector_db = FAISS.from_documents(
+        os.path.join(
+            VECTOR_DB_FOLDER,
+            "chunks.pkl"
+        ),
 
-        chunks,
+        "wb"
 
-        embeddings
+    ) as f:
+
+        pickle.dump(chunks, f)
+
+    return len(chunks)
+
+# ==========================================================
+# Search
+# ==========================================================
+
+def search(query, top_k=3):
+
+    index = faiss.read_index(
+
+        os.path.join(
+            VECTOR_DB_FOLDER,
+            "faiss.index"
+        )
 
     )
 
-    vector_db.save_local(VECTOR_DB_PATH)
+    with open(
 
-    return True
+        os.path.join(
+            VECTOR_DB_FOLDER,
+            "chunks.pkl"
+        ),
 
-# -----------------------------------------------------
-# Load Vector Database
-# -----------------------------------------------------
+        "rb"
 
-def load_vector_store():
+    ) as f:
 
-    return FAISS.load_local(
+        chunks = pickle.load(f)
 
-        VECTOR_DB_PATH,
+    query_embedding = get_embedding(query)
 
-        embeddings,
+    distances, indices = index.search(
 
-        allow_dangerous_deserialization=True
+        np.array([query_embedding]),
+
+        top_k
 
     )
 
-# -----------------------------------------------------
-# Ask Question
-# -----------------------------------------------------
+    context = ""
+
+    for idx in indices[0]:
+
+        context += chunks[idx] + "\n\n"
+
+    return context
+
+# ==========================================================
+# Ask PDF
+# ==========================================================
 
 def ask_pdf(question):
 
-    vector_db = load_vector_store()
+    context = search(question)
 
-    retriever = vector_db.as_retriever(
-        search_kwargs={"k": 4}
+    prompt = f"""
+
+Answer only using the following context.
+
+Context:
+
+{context}
+
+Question:
+
+{question}
+
+"""
+
+    response = client.models.generate_content(
+
+        model=GEMINI_CHAT_MODEL,
+
+        contents=prompt
+
     )
 
-    document_chain = create_stuff_documents_chain(
-        llm,
-        prompt
-    )
+    return response.text
 
-    retrieval_chain = create_retrieval_chain(
-        retriever,
-        document_chain
-    )
-
-    response = retrieval_chain.invoke(
-        {
-            "input": question
-        }
-    )
-
-    return response["answer"]
-
-# -----------------------------------------------------
+# ==========================================================
 # CLI Test
-# -----------------------------------------------------
+# ==========================================================
 
 if __name__ == "__main__":
 
-    print("=" * 50)
-    print("AI Studio - RAG")
-    print("=" * 50)
+    print("=" * 60)
 
-    pdf = input("Enter PDF Path : ")
+    print("📄 AI Studio RAG")
 
-    build_vector_store(pdf)
+    print("=" * 60)
 
-    print("\nVector Database Created Successfully")
+    pdf_path = input("PDF Path : ")
+
+    total = build_vector_database(pdf_path)
+
+    print(f"\nIndexed {total} Chunks")
 
     while True:
 
-        question = input("\nAsk Question : ")
+        question = input("\nQuestion : ")
 
         if question.lower() == "exit":
 
@@ -221,6 +255,6 @@ if __name__ == "__main__":
 
         answer = ask_pdf(question)
 
-        print("\nAnswer:\n")
+        print("\nGemini:\n")
 
-        print(answer)
+        print(answer);
